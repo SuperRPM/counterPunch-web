@@ -1,37 +1,58 @@
+import { useEffect, useState } from 'react';
 import NewsItem from '../components/NewsItem';
 import SubscribeForm from '../components/SubscribeForm';
+import { newsService } from '../services/newsService';
 
-// 임시 데이터 - 실제로는 API에서 가져올 예정
-const newsItems = [
-  {
-    title: '정부, 내년도 예산안 656조원 편성...역대 최대',
-    thumbnail: 'https://via.placeholder.com/400x300',
-  },
-  {
-    title: 'CounterPunch: 예산안 분석 - 누가 더 많은 예산을 받았나?',
-    thumbnail: 'https://via.placeholder.com/400x300',
-    isCounterPunch: true,
-  },
-  {
-    title: '주식시장, 3일 연속 상승...코스피 2,700선 돌파',
-    thumbnail: 'https://via.placeholder.com/400x300',
-  },
-  {
-    title: '기업들의 ESG 경영, 실효성 논란',
-    thumbnail: 'https://via.placeholder.com/400x300',
-  },
-  {
-    title: 'CounterPunch: ESG 경영의 진실과 오해',
-    thumbnail: 'https://via.placeholder.com/400x300',
-    isCounterPunch: true,
-  },
-  {
-    title: '디지털 전환 가속화...기업들의 AI 도입 현황',
-    thumbnail: 'https://via.placeholder.com/400x300',
-  },
-];
+interface NewsItem {
+  title: string;
+  thumbnail: string;
+  url: string;
+  isCounterPunch?: boolean;
+}
 
 const Home = () => {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      const urls = [
+        {
+          url: 'https://www.ekn.kr/web/view.php?key=20250417023178225',
+          isCounterPunch: false
+        },
+        {
+          url: 'https://news.sbs.co.kr/news/endPage.do?news_id=N1008065717',
+          isCounterPunch: false
+        },
+        {
+          url: 'https://news.nate.com/view/20250417n30681',
+          isCounterPunch: false
+        },
+        {
+          url: 'https://www.businesspost.co.kr/BP?command=article_view&num=391780',
+          isCounterPunch: false
+        },
+        {
+          url: 'https://mbnmoney.mbn.co.kr/news/view?news_no=MM1005466017',
+          isCounterPunch: true
+        }
+      ];
+
+      await newsService.fetchNewsData(urls.map(item => item.url));
+      const items = newsService.getNewsItems();
+      // CounterPunch 여부 설정
+      const updatedItems = items.map((item, index) => ({
+        ...item,
+        isCounterPunch: urls[index].isCounterPunch
+      }));
+      setNewsItems(updatedItems);
+      setLoading(false);
+    };
+
+    fetchNews();
+  }, []);
+
   return (
     <div className="space-y-6 px-4">
       <div className="text-center pt-4">
@@ -44,16 +65,21 @@ const Home = () => {
         </p>
       </div>
 
-      <div className="space-y-4">
-        {newsItems.map((item, index) => (
-          <NewsItem
-            key={index}
-            title={item.title}
-            thumbnail={item.thumbnail}
-            isCounterPunch={item.isCounterPunch}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-8">로딩 중...</div>
+      ) : (
+        <div className="space-y-4">
+          {newsItems.map((item, index) => (
+            <NewsItem
+              key={index}
+              title={item.title}
+              thumbnail={item.thumbnail}
+              url={item.url}
+              isCounterPunch={item.isCounterPunch}
+            />
+          ))}
+        </div>
+      )}
 
       <SubscribeForm />
     </div>

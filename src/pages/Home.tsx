@@ -1,56 +1,29 @@
 import { useEffect, useState } from 'react';
 import NewsItem from '../components/NewsItem';
 import SubscribeForm from '../components/SubscribeForm';
-import { newsService } from '../services/newsService';
-
-interface NewsItem {
-  title: string;
-  thumbnail: string;
-  url: string;
-  isCounterPunch?: boolean;
-}
+import { apiService, Article } from '../services/apiService';
 
 const Home = () => {
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNews = async () => {
-      const urls = [
-        {
-          url: 'https://www.ekn.kr/web/view.php?key=20250417023178225',
-          isCounterPunch: false
-        },
-        {
-          url: 'https://news.sbs.co.kr/news/endPage.do?news_id=N1008065717',
-          isCounterPunch: false
-        },
-        {
-          url: 'https://news.nate.com/view/20250417n30681',
-          isCounterPunch: false
-        },
-        {
-          url: 'https://www.businesspost.co.kr/BP?command=article_view&num=391780',
-          isCounterPunch: false
-        },
-        {
-          url: 'https://mbnmoney.mbn.co.kr/news/view?news_no=MM1005466017',
-          isCounterPunch: true
-        }
-      ];
-
-      await newsService.fetchNewsData(urls.map(item => item.url));
-      const items = newsService.getNewsItems();
-      // CounterPunch 여부 설정
-      const updatedItems = items.map((item, index) => ({
-        ...item,
-        isCounterPunch: urls[index].isCounterPunch
-      }));
-      setNewsItems(updatedItems);
-      setLoading(false);
+    const fetchArticles = async () => {
+      try {
+        const data = await apiService.getArticles();
+        const articlesWithCounterPunch = data.map((article, index) => ({
+          ...article,
+          isCounterPunch: index === 4
+        }));
+        setArticles(articlesWithCounterPunch);
+      } catch (error) {
+        console.error('Error fetching articles:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchNews();
+    fetchArticles();
   }, []);
 
   return (
@@ -69,13 +42,13 @@ const Home = () => {
         <div className="text-center py-8">로딩 중...</div>
       ) : (
         <div className="space-y-4">
-          {newsItems.map((item, index) => (
+          {articles.map((article) => (
             <NewsItem
-              key={index}
-              title={item.title}
-              thumbnail={item.thumbnail}
-              url={item.url}
-              isCounterPunch={item.isCounterPunch}
+              key={article.id}
+              title={article.title}
+              thumbnail={article.thumbnail_url}
+              url={article.url}
+              isCounterPunch={article.isCounterPunch}
             />
           ))}
         </div>
